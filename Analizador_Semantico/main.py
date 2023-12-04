@@ -1,26 +1,17 @@
 import Lenguaje
 import sintactico
 
-#texto = input("Introduce el texto a analizar: ")
-texto = ""
-archivo = open("codigo.me",mode="r",encoding="utf-8")
-while(True):
-    linea = archivo.readline()
-    if not linea:
-        break
-    texto = texto + linea
-archivo.close()
+texto = input("Introduce el texto a analizar: ")
 print(texto)
 elementos = Lenguaje.analizador(texto)
 arbol = sintactico.analizador(elementos)
-#print(arbol)
 variables = []
 funciones = []
+arbol_2 = arbol
 if (arbol):
     arbol = arbol.Definiciones
-    while(arbol):                   ##PARA DESPLAZARSE EN DEFINICIONES
+    while(arbol):                   
         definicion = arbol.Definicion
-        #######################################VARIABLES GLOBALES############################################
         defvar = None
         try:
             defvar = definicion.DefVar
@@ -34,9 +25,6 @@ if (arbol):
                     defvar = defvar.ListaVar.extra
                 except AttributeError:
                     defvar = defvar.ListaVar
-        ####################################################################################################
-
-        ###################################FUNCIONES Y SUS VARIABLES########################################
         deffun = None
         try:
             deffun = definicion.DefFunc
@@ -46,7 +34,7 @@ if (arbol):
             funcion = deffun.identificador
             funciones.append({'id':deffun.identificador,'tipo':deffun.tipo})
             try:
-                param = deffun.Parametros.extra     ##Se verifica que si haya parametros
+                param = deffun.Parametros.extra    
             except AttributeError:
                 param = deffun.Parametros
             while(param):
@@ -57,12 +45,12 @@ if (arbol):
                     param = param.ListaParam
             bloc = deffun.BloqFunc
             try:
-                bloc = bloc.DefLocales.extra        ##Se verifica que exista algo dentro de la funcion
+                bloc = bloc.DefLocales.extra        
             except AttributeError:
                 bloc = bloc.DefLocales
             while(bloc):
                 try:
-                    defvar = bloc.DefLocal.DefVar     ##Se verifica que se definan variables
+                    defvar = bloc.DefLocal.DefVar    
                 except AttributeError:
                     defvar = None
                 if(defvar):
@@ -73,17 +61,121 @@ if (arbol):
                             defvar = defvar.ListaVar.extra
                         except AttributeError:
                             defvar = defvar.ListaVar
-
                 try:
                     bloc = bloc.DefLocales.extra
                 except AttributeError:
                     bloc = bloc.DefLocales
-        ###################################################################################################
-
         try:
             arbol = arbol.Definiciones.extra
         except AttributeError:
             arbol = arbol.Definiciones
+
+if(arbol_2):
+    arbol_2 = arbol_2.Definiciones
+    while(arbol_2):                   
+        definicion = arbol_2.Definicion
+        deffun = None
+        try:
+            deffun = definicion.DefFunc
+        except AttributeError:
+            pass
+        if(deffun):
+            funcion = deffun.identificador
+            bloc = deffun.BloqFunc
+            try:
+                bloc = bloc.DefLocales.extra        
+            except AttributeError:
+                bloc = bloc.DefLocales
+            while(bloc):
+                try:
+                    sentencia = bloc.DefLocal.Sentencia.identificador     
+                    sentencia = bloc.DefLocal.Sentencia
+                except AttributeError:
+                    sentencia = None
+                if(sentencia):
+                    id = sentencia.identificador
+                    try:
+                        expresion = sentencia.Expresion.Termino
+                    except AttributeError:
+                        expresion = None
+                    if(expresion):
+                        for a in variables:
+                            if(a["id"]==id):
+                                try:
+                                    a["valor"] = expresion.entero
+                                except AttributeError:
+                                    try:
+                                        a["valor"] = expresion.real
+                                    except AttributeError:
+                                        try:
+                                            a["valor"] = expresion.cadena
+                                        except AttributeError:
+                                            for b in variables:
+                                                if(b["id"]==expresion.identificador):
+                                                    a["valor"] = b["valor"]
+                    try:
+                        expresion = sentencia.Expresion.Expresion2
+                        expresion = sentencia.Expresion
+                    except AttributeError:
+                        expresion = None
+                    if(expresion):
+                        a=0
+                        b=0
+                        try:
+                            a = expresion.Expresion.Termino.entero
+                        except AttributeError:
+                            try:
+                                a = expresion.Expresion.Termino.real
+                            except AttributeError:
+                                try:
+                                    a = expresion.Expresion.Termino.cadena
+                                except AttributeError:
+                                    for b in variables:
+                                        if(b["id"]==expresion.Expresion.Termino.identificador):
+                                            a = b["valor"]
+                        try:
+                            b = expresion.Expresion2.Termino.entero
+                        except AttributeError:
+                            try:
+                                b = expresion.Expresion2.Termino.real
+                            except AttributeError:
+                                try:
+                                    b = expresion.Expresion2.Termino.cadena
+                                except AttributeError:
+                                    for c in variables:
+                                        if(c["id"]==expresion.Expresion2.Termino.identificador):
+                                            b = c["valor"]
+                        try:
+                            operacion = expresion.opSuma
+                        except AttributeError:
+                            try:
+                                operacion = expresion.opMul
+                            except AttributeError:
+                                operacion = None
+                        if(operacion == "+"):
+                            for i in variables:
+                                if(i["id"] == id):
+                                    i["valor"]=a+b
+                        elif(operacion == "-"):
+                            for i in variables:
+                                if(i["id"] == id):
+                                    i["valor"]=a-b
+                        elif(operacion == "*"):
+                            for i in variables:
+                                if(i["id"] == id):
+                                    i["valor"]=int(a)*int(b)
+                        elif(operacion == "/"):
+                            for i in variables:
+                                if(i["id"] == id):
+                                    i["valor"]=a/b
+                try:
+                    bloc = bloc.DefLocales.extra
+                except AttributeError:
+                    bloc = bloc.DefLocales
+        try:
+            arbol_2 = arbol_2.Definiciones.extra
+        except AttributeError:
+            arbol_2 = arbol_2.Definiciones
 
 print("\n")
 print("FUNCIONES")
